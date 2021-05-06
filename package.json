@@ -12,5 +12,6 @@
     "build": "tsc",
     "test": "node lib/test.js",
     "dev": "yarn build && yarn test"
-  }
+  },
+  "bin": "bin/wrapcraft.js"
 }
