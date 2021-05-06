@@ -1,5 +1,9 @@
 /**
+ * Wrapcraft
  * 
+ * A minecraft server wrapper library.
+ * 
+ * By sigmasoldi3r
  */
 import * as cp from 'child_process';
 import * as EventEmitter from 'events';
@@ -11,11 +15,80 @@ export class ServerFactoryError extends Error { }
 /**
  * A physical block information.
  */
-export interface BlockData extends any {
+export interface BlockData {
 
 }
 
-export type MemoryUnit = 'M' | 'G'
+export type TellColor
+  = 'black'
+  | 'dark_blue'
+  | 'dark_green'
+  | 'dark_aqua'
+  | 'dark_red'
+  | 'dark_purple'
+  | 'gold'
+  | 'gray'
+  | 'dark_gray'
+  | 'blue'
+  | 'green'
+  | 'aqua'
+  | 'red'
+  | 'light_purple'
+  | 'yellow'
+  | 'white'
+  | 'reset'
+  ;
+
+export interface TellDataObject {
+  text: string;
+  color?: TellColor;
+  bold?: boolean;
+  italic?: boolean;
+  underlined?: boolean;
+  strikethrough?: boolean;
+  obfuscated?: boolean;
+  insertion?: string;
+  font?: string;
+  extra?: (TellDataObject | string | boolean | number)[];
+  clickEvent?: {
+    action: 'open_url'
+    | 'open_file'
+    | 'run_command'
+    | 'suggest_command'
+    | 'change_page'
+    | 'copy_to_clipboard'
+    ;
+    value: string;
+  };
+  hoverEvent?: { value: string; } & ({
+    action: 'show_text';
+    contents: TellData;
+  } | {
+    action: 'show_item';
+    contents: {
+      id: string;
+      count?: number;
+      tag?: string;
+    };
+  } | {
+    action: 'show_entity';
+    contents: {
+      name?: TellData;
+      type: string;
+      id: string;
+    };
+  });
+}
+
+export type TellData
+  = TellDataObject
+  | TellDataObject[]
+  | string
+  | boolean
+  | number
+  ;
+
+export type MemoryUnit = 'M' | 'G';
 
 /**
  * A server builder object, configures the spawning of
@@ -295,12 +368,42 @@ export class Server {
   /**
    * Gets the block data at the given point.
    * If there is any problem related to the output, returns null.
+   * @see https://minecraft.fandom.com/wiki/Commands/data
    */
-  async getBlockData(x: number, y: number, z: number): BlockData | null {
-    const response = await this.command(`data get block ${x} ${y} ${z}`);
+  async getBlockData(x: number, y: number, z: number): Promise<BlockData | null> {
+    const response = await this.data('get', 'block', x, y, z);
     const match = response.match(/^.+?({.+?})$/);
     if (match == null) return null;
     return eval(`(${match[1]})`);
+  }
+
+  /**
+   * Performs a data query to the server.
+   * @param operation The operation type.
+   * @param type Type of data to inspect.
+   * @param args Extra arguments based on query parameters.
+   * @returns Plain result of the query.
+   * @see https://minecraft.fandom.com/wiki/Commands/data
+   */
+  async data(operation: 'get' | 'merge' | 'remove' | 'modify', type: 'block' | 'entity' | 'storage', ...args: any[]): Promise<string> {
+    return this.command(`data ${operation} ${type} ${args.join(' ')}`);
+  }
+
+  /**
+   * Performs a simple say command on the server.
+   * @param message The message to say by the server.
+   */
+  async say(message: string) {
+    return this.command(`say ${message}`);
+  }
+
+  /**
+   * Tells to the target the given message.
+   * @param target Who will receive the message.
+   * @param message The message data to be sent.
+   */
+  async tell(target: string, message: TellData) {
+    return this.command(`tellraw ${target} ${JSON.stringify(message)}`);
   }
 
   /**
