@@ -1,0 +1,16 @@
+{
+  "name": "wrapcraft",
+  "description": "A simple server wrapper for NodeJS",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^15.0.2",
+    "typescript": "^4.2.4"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node lib/test.js",
+    "dev": "yarn build && yarn test"
+  }
+}
