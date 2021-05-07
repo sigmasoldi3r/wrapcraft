@@ -13,5 +13,8 @@
     "test": "node lib/test.js",
     "dev": "yarn build && yarn test"
   },
-  "bin": "bin/wrapcraft.js"
+  "bin": "bin/wrapcraft.js",
+  "dependencies": {
+    "chalk": "^4.1.1"
+  }
 }

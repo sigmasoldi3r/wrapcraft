@@ -1,26 +1,57 @@
 /**
  * Wrapcraft
- * 
+ *
  * A minecraft server wrapper library.
- * 
+ *
  * By sigmasoldi3r
  */
 import * as cp from 'child_process';
 import * as EventEmitter from 'events';
 import * as path from 'path';
 import * as rl from 'readline';
+import * as chalk from 'chalk';
 
-export class ServerFactoryError extends Error { }
+export class ServerFactoryError extends Error {}
 
 /**
  * A physical block information.
  */
-export interface BlockData {
+export interface BlockData {}
 
-}
+/**
+ * Hexadecimal character.
+ */
+export type HexChar =
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | 'A'
+  | 'a'
+  | 'B'
+  | 'b'
+  | 'C'
+  | 'c'
+  | 'D'
+  | 'd'
+  | 'E'
+  | 'e'
+  | 'F'
+  | 'F';
 
-export type TellColor
-  = 'black'
+/**
+ * Supported literal colors.
+ * 32-bit hexadecimal (Eg: #B00BA1) are supported, but cannot be represented by
+ * a type due to the complexity.
+ */
+export type TellColor =
+  | 'black'
   | 'dark_blue'
   | 'dark_green'
   | 'dark_aqua'
@@ -37,8 +68,11 @@ export type TellColor
   | 'yellow'
   | 'white'
   | 'reset'
-  ;
+  | `#${HexChar}${HexChar}${HexChar}`;
 
+/**
+ * A tellraw command data structure object.
+ */
 export interface TellDataObject {
   text: string;
   color?: TellColor;
@@ -51,43 +85,52 @@ export interface TellDataObject {
   font?: string;
   extra?: (TellDataObject | string | boolean | number)[];
   clickEvent?: {
-    action: 'open_url'
-    | 'open_file'
-    | 'run_command'
-    | 'suggest_command'
-    | 'change_page'
-    | 'copy_to_clipboard'
-    ;
+    action:
+      | 'open_url'
+      | 'open_file'
+      | 'run_command'
+      | 'suggest_command'
+      | 'change_page'
+      | 'copy_to_clipboard';
     value: string;
   };
-  hoverEvent?: { value: string; } & ({
-    action: 'show_text';
-    contents: TellData;
-  } | {
-    action: 'show_item';
-    contents: {
-      id: string;
-      count?: number;
-      tag?: string;
-    };
-  } | {
-    action: 'show_entity';
-    contents: {
-      name?: TellData;
-      type: string;
-      id: string;
-    };
-  });
+  hoverEvent?: { value: string } & (
+    | {
+        action: 'show_text';
+        contents: TellData;
+      }
+    | {
+        action: 'show_item';
+        contents: {
+          id: string;
+          count?: number;
+          tag?: string;
+        };
+      }
+    | {
+        action: 'show_entity';
+        contents: {
+          name?: TellData;
+          type: string;
+          id: string;
+        };
+      }
+  );
 }
 
-export type TellData
-  = TellDataObject
+/**
+ * Expected types for tellraw data command.
+ */
+export type TellData =
+  | TellDataObject
   | TellDataObject[]
   | string
   | boolean
-  | number
-  ;
+  | number;
 
+/**
+ * Supported suffixes for memory size.
+ */
 export type MemoryUnit = 'M' | 'G';
 
 /**
@@ -188,7 +231,9 @@ export class ServerFactoryBuilder {
    */
   build() {
     if (this._file == null) {
-      throw new ServerFactoryError('Attempting to build a server process without a file!');
+      throw new ServerFactoryError(
+        'Attempting to build a server process without a file!'
+      );
     }
     const extra: string[] = [];
     if (!this._gui) {
@@ -201,7 +246,13 @@ export class ServerFactoryBuilder {
       extra.push(`-Xms${this._minMemory.join('')}`);
     }
     return new ServerFactory(
-      this._file, this._command, this._jarSpec, [extra, ...this._args], this._printOut, this._printErr);
+      this._file,
+      this._command,
+      this._jarSpec,
+      [extra, ...this._args],
+      this._printOut,
+      this._printErr
+    );
   }
 }
 
@@ -215,13 +266,16 @@ export class ServerFactory {
     readonly jarSpec: string,
     readonly args: any[],
     readonly printOutput: boolean,
-    readonly printErrors: boolean) { }
+    readonly printErrors: boolean
+  ) {}
 
   /**
    * @returns The command string.
    */
   private buildCommandString() {
-    return `${this.command} ${this.jarSpec} ${this.file} ${this.args.join(' ')}`;
+    return `${this.command} ${this.jarSpec} ${this.file} ${this.args.join(
+      ' '
+    )}`;
   }
 
   /**
@@ -231,13 +285,14 @@ export class ServerFactory {
     return new Server(
       cp.exec(this.buildCommandString(), { cwd }),
       this.printOutput,
-      this.printErrors);
+      this.printErrors
+    );
   }
 }
 
 /**
  * Server running instance.
- * 
+ *
  * Once a server is killed, the instance must be disposed, as will no longer accept
  * incoming messages nor output outcoming ones.
  */
@@ -246,7 +301,7 @@ export class Server {
    * Spawns the server process, without returning the factory.
    * @param file The jar file that contains the server binaries.
    * @param args Extra and optional arguments can be passed.
-   * @returns 
+   * @returns
    */
   static spawn(file: string, ...args: any[]) {
     return this.create(file, ...args).spawn();
@@ -261,16 +316,20 @@ export class Server {
     return new ServerFactoryBuilder().file(file).args(args).build();
   }
 
-  constructor(private readonly process: cp.ChildProcess, stdout: boolean, stderr: boolean) {
+  constructor(
+    private readonly process: cp.ChildProcess,
+    stdout: boolean,
+    stderr: boolean
+  ) {
     this.reader = rl.createInterface({
       input: process.stdout,
-      output: process.stdin
+      output: process.stdin,
     });
     if (stdout) {
-      process.stdout.on('data', data => global.process.stdout.write(data));
+      process.stdout.on('data', data => global.process.stdout.write(chalk.gray(data)));
     }
     if (stderr) {
-      process.stderr.on('data', data => global.process.stderr.write(data));
+      process.stderr.on('data', data => global.process.stderr.write(chalk.red(data)));
     }
     process.once('exit', code => this.events.emit('stop', code));
     this.reader.on('line', line => this.events.emit('message', line));
@@ -370,7 +429,11 @@ export class Server {
    * If there is any problem related to the output, returns null.
    * @see https://minecraft.fandom.com/wiki/Commands/data
    */
-  async getBlockData(x: number, y: number, z: number): Promise<BlockData | null> {
+  async getBlockData(
+    x: number,
+    y: number,
+    z: number
+  ): Promise<BlockData | null> {
     const response = await this.data('get', 'block', x, y, z);
     const match = response.match(/^.+?({.+?})$/);
     if (match == null) return null;
@@ -385,7 +448,11 @@ export class Server {
    * @returns Plain result of the query.
    * @see https://minecraft.fandom.com/wiki/Commands/data
    */
-  async data(operation: 'get' | 'merge' | 'remove' | 'modify', type: 'block' | 'entity' | 'storage', ...args: any[]): Promise<string> {
+  async data(
+    operation: 'get' | 'merge' | 'remove' | 'modify',
+    type: 'block' | 'entity' | 'storage',
+    ...args: any[]
+  ): Promise<string> {
     return this.command(`data ${operation} ${type} ${args.join(' ')}`);
   }
 
